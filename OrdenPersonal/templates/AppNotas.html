@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tareas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <style>
+        body { background: #fff; color: #232946; }
+        .task-done { text-decoration: line-through; color: #bdbdbd; }
+        .btn-custom { border-radius: 20px; }
+        .calendar-container { min-height: 400px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0003; }
+        #calendar { min-height: 400px; }
+        .fc-toolbar-title, .fc-daygrid-day-number { color: #6c63ff !important; font-weight: bold; }
+        .fc-daygrid-day.fc-day-today { background: #6c63ff22 !important; border-radius: 10px; }
+        .fc-daygrid-day { border-radius: 10px; }
+        .fc-event { border-radius: 8px; font-weight: 500; }
+        .note-box { background: #f8fafc; color: #232946; border-radius: 10px; padding: 10px; margin-top: 8px; box-shadow: 0 2px 8px #0001; }
+        .note-label { font-weight: bold; color: #6c63ff; }
+        .list-group-item { background: #fff; color: #232946; }
+        .btn-warning { color: #fff; background-color: #6c63ff; border: none; }
+        .btn-warning:hover { background-color: #5548c8; }
+        .btn-primary { background-color: #232946; border: none; }
+        .btn-primary:hover { background-color: #6c63ff; }
+        .btn-danger { background-color: #e63946; border: none; }
+        .btn-danger:hover { background-color: #b71c1c; }
+        .btn-success { background-color: #43aa8b; border: none; }
+        .btn-success:hover { background-color: #2d6a4f; }
+        .btn-back { background-color: #6c757d; color: white; }
+        .btn-back:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+<a href="/" class="btn btn-back position-absolute m-3" style="top:0;left:0;z-index:10;">Volver al Menú</a>
+<div class="container py-5">
+    <h1 class="mb-4 text-center">Lista de Tareas</h1>
+    <div class="row">
+        <!-- Columna izquierda: tareas -->
+        <div class="col-md-6">
+            <form action="/add" method="post" class="d-flex mb-4 gap-2" id="taskForm">
+                <input type="text" name="task" class="form-control" placeholder="Nueva tarea" required>
+                <input type="date" name="date" class="form-control" style="max-width: 150px;" id="dateInput">
+                <input type="time" name="time" class="form-control" style="max-width: 120px;" id="timeInput">
+                <button type="submit" class="btn btn-success btn-custom">Añadir</button>
+            </form>
+            <ul class="list-group">
+                {% for task in tasks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="{% if task.done %}task-done{% endif %}">{{ task.name }}</span>
+                        {% if task.datetime %}
+                        <small class="text-muted ms-2">{{ task.datetime }}</small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-warning btn-custom me-2" 
+                                data-id="{{ loop.index0 }}" 
+                                data-name="{{ task.name|e }}" 
+                                data-date="{{ task.date }}" 
+                                data-time="{{ task.datetime.split(' ')[1] if task.datetime and ' ' in task.datetime else '' }}" 
+                                onclick="handleEditClick(this)">Editar</button>
+                        <a href="/done/{{ loop.index0 }}" class="btn btn-sm btn-primary btn-custom me-2">{{ 'Hecha' if not task.done else 'Deshacer' }}</a>
+                        <a href="/delete/{{ loop.index0 }}" class="btn btn-sm btn-danger btn-custom">Eliminar</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">No hay tareas aún.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <!-- Columna derecha: calendario -->
+        <div class="col-md-6">
+            <div class="calendar-container p-3">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal para editar tarea -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="editForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Tarea</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" name="edit_name" id="edit_name" class="form-control mb-2" required>
+          <input type="date" name="edit_date" id="edit_date" class="form-control mb-2">
+          <input type="time" name="edit_time" id="edit_time" class="form-control mb-2">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            var events = {{ events|tojson|safe }};
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: 400,
+                events: events,
+                dateClick: function(info) {
+                    fetch(`/tasks_by_date/${info.dateStr}`)
+                      .then(response => response.json())
+                      .then(tasks => {
+                        let html = `<h5 class='mb-3'>Tareas para ${info.dateStr}</h5>`;
+                        html += `<div class='note-box'><span class='note-label'>Nota del día:</span><textarea id='noteText' class='form-control mt-1 mb-2' rows='2' placeholder='Escribe una nota...'></textarea><button class='btn btn-sm btn-primary' onclick='saveNote(\"${info.dateStr}\")'>Guardar Nota</button></div>`;
+                        if (tasks.length === 0) {
+                            html += '<div class="alert alert-info mt-2">No hay tareas para este día.</div>';
+                        } else {
+                            html += '<ul class="list-group mt-2">';
+                            tasks.forEach(t => {
+                                html += `<li class='list-group-item'>${t.name} <small class='text-muted ms-2'>${t.datetime || ''}</small></li>`;
+                            });
+                            html += '</ul>';
+                        }
+                        showModal(html);
+                      });
+                }
+            });
+            calendar.render();
+        }
+    });
+    // Modal simple para mostrar tareas del día
+    function showModal(content) {
+        let modal = document.getElementById('customModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'customModal';
+            modal.innerHTML = `<div class='modal fade show' tabindex='-1' style='display:block; background:rgba(0,0,0,0.5);'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div class='modal-header'>
+                            <h5 class='modal-title'>Tareas del Día</h5>
+                            <button type='button' class='btn-close' onclick='closeModal()'></button>
+                        </div>
+                        <div class='modal-body' id='modalBody'></div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.appendChild(modal);
+        }
+        document.getElementById('modalBody').innerHTML = content;
+        modal.style.display = 'block';
+    }
+    function closeModal() {
+        let modal = document.getElementById('customModal');
+        if (modal) modal.style.display = 'none';
+    }
+    // Guardar nota del día
+    function saveNote(date) {
+        var note = document.getElementById('noteText').value;
+        fetch(`/note/${date}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `note=${encodeURIComponent(note)}`
+        }).then(() => closeModal());
+    }
+    // Modal para editar tarea usando data-attributes
+    function handleEditClick(btn) {
+        var modal = new bootstrap.Modal(document.getElementById('editModal'));
+        document.getElementById('edit_name').value = btn.getAttribute('data-name');
+        document.getElementById('edit_date').value = btn.getAttribute('data-date');
+        document.getElementById('edit_time').value = btn.getAttribute('data-time');
+        var form = document.getElementById('editForm');
+        form.action = `/edit/${btn.getAttribute('data-id')}`;
+        modal.show();
+    }
+    function validateAndStay() {
+        // Permite el envío normal del formulario
+        return true;
+    }
+</script>
+</body>
+</html>

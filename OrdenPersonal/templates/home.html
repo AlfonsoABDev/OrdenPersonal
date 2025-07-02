@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+            color: #232946;
+            font-family: 'Montserrat', Arial, sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+        .bg-illus {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.18;
+            background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+        }
+        .centered {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        .main-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 32px;
+            box-shadow: 0 8px 32px #23294622;
+            padding: 3rem 2.5rem 2.5rem 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            margin: 2rem 0;
+        }
+        .menu-btn {
+            border-radius: 20px;
+            font-size: 1.1rem;
+            padding: 1.2rem 1.5rem;
+            margin: 0.5rem 0.5rem 0 0.5rem;
+            min-width: 160px;
+            background: #6c63ff;
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 8px #6c63ff33;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .menu-btn:hover {
+            background: #232946;
+            color: #fff;
+            transform: translateY(-3px) scale(1.04);
+        }
+        .menu-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .app-title {
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 700;
+            font-size: 2.2rem;
+            color: #232946;
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px #6c63ff22;
+        }
+        @media (max-width: 600px) {
+            .main-card { padding: 1.5rem 0.5rem; }
+            .menu-btn { min-width: 100px; font-size: 0.95rem; padding: 0.8rem 0.5rem; }
+            .app-title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-illus"></div>
+<div class="container-fluid min-vh-100 d-flex flex-column" style="position:relative;">
+    <header class="py-3 px-4 d-flex align-items-center justify-content-between" style="z-index:2;">
+        <div class="d-flex align-items-center gap-3">
+            <img src="https://img.icons8.com/fluency/48/000000/checked-checkbox.png" style="height:40px;">
+            <span class="app-title">Orden Personal</span>
+        </div>
+        <nav>
+            <a href="/tasks" class="menu-btn btn d-inline-flex align-items-center mx-1"><span class="menu-icon">🗓️</span> Tareas</a>
+            <a href="{{ url_for('cursos') }}" class="menu-btn btn d-inline-flex align-items-center mx-1"><span class="menu-icon">📚</span> Cursos</a>
+            <a href="{{ url_for('proyectos_view') }}" class="menu-btn btn d-inline-flex align-items-center mx-1"><span class="menu-icon">💡</span> Proyectos</a>
+        </nav>
+    </header>
+    {% block content %}
+    <main class="flex-grow-1 d-flex flex-column flex-md-row align-items-stretch justify-content-center gap-4 px-3 py-4" style="z-index:1;">
+        <section class="main-card flex-fill text-center d-flex flex-column justify-content-center align-items-center">
+            <h2 class="mb-3">¡Bienvenido!</h2>
+            <div class="mb-4">
+                <span id="fecha-hoy" style="font-size:1.2rem;font-weight:600;"></span>
+                <div id="reloj" style="font-size:2.2rem;font-weight:700;color:#6c63ff;"></div>
+            </div>
+            <p class="lead mb-4">Organiza tus tareas, cursos y proyectos de forma visual y profesional.</p>
+            <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80" class="rounded shadow mb-3" style="max-width:320px;">
+        </section>
+        <section class="main-card flex-fill d-flex flex-column align-items-center justify-content-center">
+            <h4 class="mb-3">Accesos rápidos</h4>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="/tasks" class="menu-btn btn d-flex flex-column align-items-center">
+                    <span class="menu-icon">🗓️</span>
+                    <span>Lista de Tareas</span>
+                </a>
+                <a href="{{ url_for('cursos') }}" class="menu-btn btn d-flex flex-column align-items-center">
+                    <span class="menu-icon">📚</span>
+                    <span>Cursos</span>
+                </a>
+                <a href="{{ url_for('proyectos_view') }}" class="menu-btn btn d-flex flex-column align-items-center">
+                    <span class="menu-icon">💡</span>
+                    <span>Proyectos</span>
+                </a>
+            </div>
+        </section>
+    </main>
+    {% endblock %}
+    {% block extra_scripts %}
+    <script>
+    function actualizarReloj() {
+        const reloj = document.getElementById('reloj');
+        const fecha = document.getElementById('fecha-hoy');
+        const ahora = new Date();
+        reloj.textContent = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        fecha.textContent = ahora.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+    </script>
+    {% endblock %}
+</div>
+</body>
+</html>

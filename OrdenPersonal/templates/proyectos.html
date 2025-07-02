@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyectos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #fff; color: #232946; }
+        .container-proyectos {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #f4f6fb;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px #e0e0e0;
+            padding: 2rem 2.5rem;
+        }
+        .proyecto-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 6px #e0e0e0;
+            margin-bottom: 1.2rem;
+            padding: 1.2rem 1.5rem;
+        }
+        .proyecto-title { color: #6c63ff; font-weight: 600; font-size: 1.2rem; }
+        .btn-proyecto { background: #6c63ff; color: #fff; border-radius: 20px; border: none; }
+        .btn-proyecto:hover { background: #232946; }
+        .volver-btn { margin-bottom: 1.5rem; }
+        .objetivo-circulo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e0e0e0;
+            border-radius: 50%;
+            font-weight: bold;
+            color: #fff;
+        }
+        .cumplido {
+            background: #28a745 !important;
+        }
+    </style>
+</head>
+<body>
+{% extends 'base.html' %}
+{% block title %}Proyectos | Orden Personal{% endblock %}
+{% block content %}
+<div class="container-proyectos">
+    <h2 class="mb-4">Proyectos</h2>
+    <form method="POST" action="/proyectos/add" class="mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Nombre del Proyecto</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Descripción</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-proyecto w-100">Agregar</button>
+            </div>
+        </div>
+    </form>
+    {% if proyectos %}
+        {% for proyecto in proyectos %}
+        <div class="proyecto-card" id="proyecto-{{ loop.index0 }}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="proyecto-title">{{ proyecto.name }}</div>
+                    <div class="text-muted mb-2">{{ proyecto.description }}</div>
+                </div>
+                <button class="btn btn-outline-primary btn-sm mt-2" type="button" onclick="toggleObjetivos({{ loop.index0 }})">Objetivos</button>
+            </div>
+            <div class="objetivos-menu mt-3" id="objetivos-menu-{{ loop.index0 }}" style="display:none;">
+                <form method="POST" action="/proyectos/{{ loop.index0 }}" class="mb-3 d-flex gap-2">
+                    <input type="text" name="objetivo" class="form-control" placeholder="Nuevo objetivo..." required>
+                    <button type="submit" class="btn btn-proyecto">Agregar</button>
+                </form>
+                {% set objetivos = proyectos_objetivos[loop.index0] if proyectos_objetivos and loop.index0 in proyectos_objetivos else [] %}
+                {% if objetivos %}
+                <div class="objetivos-linea d-flex align-items-center">
+                    {% for objetivo in objetivos %}
+                    <div class="d-flex flex-column align-items-center">
+                        <a href="{{ url_for('toggle_objetivo', proyecto_id=loop.parent.index0, objetivo_id=loop.index0) }}" style="text-decoration:none;">
+                            <div class="objetivo-circulo{% if objetivo.cumplido %} cumplido{% endif %}" style="width:38px;height:38px;">
+                                {{ loop.index }}
+                            </div>
+                        </a>
+                        <div class="objetivo-label">{{ objetivo.texto }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-muted small">Haz clic en cada círculo para marcar como cumplido o pendiente.</div>
+                {% else %}
+                <div class="alert alert-info">Agrega los objetivos principales de tu proyecto.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">Aún no tienes proyectos. ¡Agrega uno!</div>
+    {% endif %}
+</div>
+<script>
+function toggleObjetivos(idx) {
+    const menu = document.getElementById('objetivos-menu-' + idx);
+    if (menu.style.display === 'none') {
+        menu.style.display = 'block';
+    } else {
+        menu.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
+</body>
+</html>
